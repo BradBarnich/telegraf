@@ -1146,7 +1146,6 @@ WITH utilization_cte AS
 	SELECT
 		 [SQLProcessUtilization] AS [sqlserver_process_cpu]
 		,[SystemIdle] AS [system_idle_cpu]
-		,100 - [SystemIdle] - [SQLProcessUtilization] AS [other_process_cpu]
 	FROM (
 		SELECT TOP 1
 			 [record_id]
@@ -1173,7 +1172,7 @@ WITH utilization_cte AS
 ),
 processor_Info_cte AS
 (
-	SELECT ([cpu_count] / [hyperthread_ratio]) as [number_of_physical_cpus]
+	SELECT (([cpu_count] / 64 ) + 1) as [number_of_cpu_groups]
 	FROM sys.dm_os_sys_info
 )
 SELECT
@@ -1184,10 +1183,7 @@ SELECT
 	,100 - [system_idle_cpu] - [sqlserver_process_cpu] AS [other_process_cpu]
 FROM (
 	SELECT
-		(CASE
-			WHEN u.[other_process_cpu] < 0 THEN u.[sqlserver_process_cpu] / p.[number_of_physical_cpus]
-			ELSE u.[sqlserver_process_cpu]
-		END) AS [sqlserver_process_cpu]
+		[sqlserver_process_cpu] / number_of_cpu_groups as [sqlserver_process_cpu]
 		,u.[system_idle_cpu]
 	FROM utilization_cte AS u
 		CROSS APPLY processor_Info_cte AS p
