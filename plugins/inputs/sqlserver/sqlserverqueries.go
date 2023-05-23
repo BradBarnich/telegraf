@@ -138,6 +138,10 @@ EXEC(@SqlStatement)
 `
 
 const sqlServerDatabaseIO = `
+-- sqlServerDatabaseIO
+create table #fake_master_files (database_id int, file_id int, physical_name nvarchar(260), name nvarchar(128), type_desc nvarchar(60))
+EXEC sp_MSforeachdb 'use [?]; insert into #fake_master_files select db_id(''?'') database_id, file_id, physical_name, name, type_desc from sys.database_files'
+
 SET DEADLOCK_PRIORITY -10;
 IF SERVERPROPERTY('EngineEdition') NOT IN (2,3,4) BEGIN /*NOT IN Standard,Enterpris,Express*/
 	DECLARE @ErrorMessage AS nvarchar(500) = 'Telegraf - Connection string Server:'+ @@ServerName + ',Database:' + DB_NAME() +' is not a SQL Server Standard,Enterprise or Express. Check the database_type parameter in the telegraf configuration.';
@@ -180,7 +184,7 @@ SELECT
 	,vfs.[num_of_bytes_written] AS [write_bytes]'
 	+ @Columns + N'
 FROM sys.dm_io_virtual_file_stats(NULL, NULL) AS vfs
-INNER JOIN sys.master_files AS mf WITH (NOLOCK)
+INNER JOIN #fake_master_files AS mf WITH (NOLOCK)
 	ON vfs.[database_id] = mf.[database_id] AND vfs.[file_id] = mf.[file_id]'
 + @Tables;
 
