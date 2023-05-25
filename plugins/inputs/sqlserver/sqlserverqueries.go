@@ -155,13 +155,6 @@ DECLARE
 	,@Columns AS nvarchar(max) = ''
 	,@Tables AS nvarchar(max) = ''
 
-IF @MajorMinorVersion >= 1050 BEGIN
-	/*in [volume_mount_point] any trailing "\" char will be automatically removed by telegraf */
-	SET @Columns += N'
-	,[volume_mount_point]'
-	SET @Tables += N'
-	CROSS APPLY sys.dm_os_volume_stats(vfs.[database_id], vfs.[file_id]) AS vs'
-END
 IF @MajorMinorVersion > 1100 BEGIN
 	SET @Columns += N'
 	,vfs.[io_stall_queued_read_ms] AS [rg_read_stall_ms]
